@@ -8,6 +8,8 @@
 
 #include "Image.h"
 #include "Camera.h"
+#include "Scene.h"
+#include "Sphere.h"
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
@@ -32,92 +34,97 @@ double RANDOM_COLORS[7][3] = {
 	{0.6350,    0.0780,    0.1840},
 };
 
+glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene) {
+	Shape* hit = scene->hit(ray);
+	glm::vec3 color(0.0f, 0.0f, 0.0f);
+	if (hit != nullptr) {
+		color = hit->diffuse;
+		//for (Light* light : scene->lights) {
+		//	glm::vec3 l = 
+		//	
+		//}
+	}
+	return color;
+}
+
 int main(int argc, char **argv)
 {
 	int scene_num = stoi(argv[1]);
-	int width = stoi(argv[2]);
-	int height = stoi(argv[3]);
 	string filename = string(argv[4]);
 
-	cout << scene_num << " " << width << " " << height << " " << filename << endl;
+	auto scene = make_shared<Scene>();
 
-	//if(argc < 2) {
-	//	cout << "Usage: A1 meshfile" << endl;
-	//	return 0;
-	//}
-	//string meshName(argv[1]);
+	Sphere sph1;
+	sph1.position = glm::vec3(-0.5f, -1.0f, 1.0f);
+	sph1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+	sph1.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+	sph1.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+	sph1.exponent = 100.0;
 
-	//// Load geometry
-	//vector<float> posBuf; // list of vertex positions
-	//vector<float> norBuf; // list of vertex normals
-	//vector<float> texBuf; // list of vertex texture coords
-	//tinyobj::attrib_t attrib;
-	//std::vector<tinyobj::shape_t> shapes;
-	//std::vector<tinyobj::material_t> materials;
-	//string errStr;
-	//bool rc = tinyobj::LoadObj(&attrib, &shapes, &materials, &errStr, meshName.c_str());
-	//if(!rc) {
-	//	cerr << errStr << endl;
-	//} else {
-	//	// Some OBJ files have different indices for vertex positions, normals,
-	//	// and texture coordinates. For example, a cube corner vertex may have
-	//	// three different normals. Here, we are going to duplicate all such
-	//	// vertices.
-	//	// Loop over shapes
-	//	for(size_t s = 0; s < shapes.size(); s++) {
-	//		// Loop over faces (polygons)
-	//		size_t index_offset = 0;
-	//		for(size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-	//			size_t fv = shapes[s].mesh.num_face_vertices[f];
-	//			// Loop over vertices in the face.
-	//			for(size_t v = 0; v < fv; v++) {
-	//				// access to vertex
-	//				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-	//				posBuf.push_back(attrib.vertices[3*idx.vertex_index+0]);
-	//				posBuf.push_back(attrib.vertices[3*idx.vertex_index+1]);
-	//				posBuf.push_back(attrib.vertices[3*idx.vertex_index+2]);
-	//				if(!attrib.normals.empty()) {
-	//					norBuf.push_back(attrib.normals[3*idx.normal_index+0]);
-	//					norBuf.push_back(attrib.normals[3*idx.normal_index+1]);
-	//					norBuf.push_back(attrib.normals[3*idx.normal_index+2]);
-	//				}
-	//				if(!attrib.texcoords.empty()) {
-	//					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+0]);
-	//					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
-	//				}
-	//			}
-	//			index_offset += fv;
-	//			// per-face material (IGNORE)
-	//			shapes[s].mesh.material_ids[f];
-	//		}
-	//	}
-	//}
-	//cout << "Number of vertices: " << posBuf.size()/3 << endl;
+	Sphere sph2;
+	sph2.position = glm::vec3(0.5f, -1.0f, -1.0f);
+	sph2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+	sph2.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+	sph2.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+	sph2.exponent = 100.0;
+
+	Sphere sph3;
+	sph3.position = glm::vec3(0.0f, 1.0f, 0.0f);
+	sph3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+	sph3.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+	sph3.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+	sph3.exponent = 100.0;
+
+	Light l1;
+	l1.position = glm::vec3(-2.0f, 1.0f, 1.0f);
+
+	scene->shapes.insert(scene->shapes.end(), { &sph1, &sph2, &sph3 });
+	scene->lights.push_back(&l1);
+
+
+
+
 
 	
 	Camera cam;
 
-	cam.position = glm::vec3(0.0f, 0.0f, 5.0f);
-	cam.direction = glm::vec3(0.0f, 0.0f, -1.0f);
-	cam.fov = M_PI / 4;
-	cam.aspect = 1.0;
+	cam.eye = glm::vec3(0.0f, 0.0f, 5.0f);
+	cam.lookat = glm::vec3(0.0f, 0.0f, -1.0f);
+	cam.fovy = M_PI/ 4;
 
-	cam.plane_dist = 1.0;
+	cam.focal_dist = 1.0;
 
-	float world_height = 2 * cam.plane_dist * tan(cam.fov / 2);
-	float pixel_size = world_height / height;
+	cam.width = stoi(argv[2]);
+	cam.height = stoi(argv[3]);
+
+	float world_height = 2 * cam.focal_dist * tan(cam.fovy / 2);
+	float pixel_size = world_height / cam.height;
+
+	auto img = make_shared<Image>(cam.width, cam.height);
 
 
-	for (int j = 0; j < height; j++) {
-		for (int i = 0; i < width; i++) {
-			float x = width / 2.0 - (i + 0.5 * cam.aspect);
-			float y = height / 2.0 - (j + 0.5);
+	for (int j = 0; j < cam.height; j++) {
+		for (int i = 0; i < cam.width; i++) {
+			float x = - cam.width / 2.0 + (i + 0.5);
+			float y = - cam.height / 2.0 + (j + 0.5);
 			
-			glm::vec3 ray = normalize(glm::vec3(pixel_size * x, pixel_size * y, -1.0));
+			glm::vec3 v = normalize(glm::vec3(pixel_size * x, pixel_size * y, -1.0));
 
-			cout << ray.x << " " << ray.y << " " << ray.z << endl;
+			camray r = { cam.eye, v };
+			
+			//cam.rays.push_back(r);
+			glm::vec3 color = 255.0f * compute_ray_color(r, scene);
+			img->setPixel(i, j, (int)color.r, (int)color.g, (int)color.b);
 		}
 	}
+
+	//camray r = { glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f) };
+
+	//sph.intersect(r.p, r.v);
+
+	img->setPixel(0, 0, 255, 255, 255);
+
+	img->writeToFile(filename);
 	
 	return 0;
 }
