@@ -4,7 +4,7 @@ shared_ptr<Hit> Sphere::intersect(const glm::vec3& p, const glm::vec3& v) {
 	glm::vec3 pc = p - position;
 	float a = glm::dot(v, v);
 	float b = 2 * glm::dot(v, pc);
-	float c = glm::dot(pc, pc) - 1;
+	float c = glm::dot(pc, pc) - pow(scale.x, 2);
 	float d = pow(b, 2) - 4 * a * c;
 
 	float t = -1.0;
@@ -22,6 +22,7 @@ shared_ptr<Hit> Sphere::intersect(const glm::vec3& p, const glm::vec3& v) {
 		h->diffuse = this->diffuse;
 		h->specular = this->specular;
 		h->exponent = this->exponent;
+		h->reflective = this->reflective;
 
 		return h;
 	}

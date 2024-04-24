@@ -28,7 +28,6 @@ void Ellipsoid::set_E() {
 }
 
 shared_ptr<Hit> Ellipsoid::intersect(const glm::vec3& p, const glm::vec3& v) {
-	cout << glm::to_string(E_inv_tr) << endl;
 
 	glm::vec3 p_prime = glm::vec3(E_inv * glm::vec4(p, 1.0f));
 	glm::vec3 v_prime = glm::vec3(E_inv * glm::vec4(v, 0.0f));

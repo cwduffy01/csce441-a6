@@ -26,11 +26,12 @@
 // You should never do this in a header file.
 using namespace std;
 
-glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& cam) {
+glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& cam, int depth) {
 	shared_ptr<Hit> hit = scene->hit(ray);
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	if (hit != nullptr) {
-		color = hit->ambient;
+
+		color += hit->ambient;
 		glm::vec3 e = glm::normalize(cam.eye - hit->x);
 		for (Light* light : scene->lights) {
 			glm::vec3 l = normalize(light->position - hit->x);
@@ -40,7 +41,8 @@ glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& 
 			bool pass = false;
 			for (int i = 0; i < scene->shapes.size(); i++) {
 				auto h = scene->shapes.at(i)->intersect(light_ray.p, light_ray.v);
-				if (h != nullptr && h->t > 1e-4) {
+				float light_dist = glm::length(light->position - hit->x);
+				if (h != nullptr && h->t > 1e-4 && h->t < light_dist) {
 					//return color;
 					pass = true;
 					break;
@@ -53,7 +55,12 @@ glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& 
 
 				color += light->intensity * (cd + cs);
 			}
-			color = 0.5f * hit->n + glm::vec3(0.5f, 0.5f, 0.5f);
+			//color = 0.5f * hit->n + glm::vec3(0.5f, 0.5f, 0.5f);
+		}
+
+		if (hit->reflective && depth < 10) {
+			camray reflect = { hit->x, hit->n };
+			color += 0.7f * compute_ray_color(reflect, scene, cam, depth + 1);
 		}
 	}
 
@@ -134,6 +141,57 @@ int main(int argc, char **argv)
 		scene->shapes.insert(scene->shapes.end(), { &p, &sph1, &ell1 });
 		scene->lights.insert(scene->lights.end(), { &l1, &l2 });
 	}
+	else if (scene_num == 4 || scene_num == 5) {
+		Light l1;
+		l1.position = glm::vec3(-1.0f, 2.0f, 1.0f);
+		l1.intensity = 0.5;
+
+		Light l2;
+		l2.position = glm::vec3(0.5f, -0.5f, 0.0f);
+		l2.intensity = 0.5;
+
+		Sphere red_sphere;
+		red_sphere.position = glm::vec3(0.5f, -0.7f, 0.5f);
+		red_sphere.scale = glm::vec3(0.3f, 0.3f, 0.3f);
+		red_sphere.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+		red_sphere.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		red_sphere.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		red_sphere.exponent = 100.0;
+
+		Sphere blue_sphere;
+		blue_sphere.position = glm::vec3(1.0f, -0.7f, 0.0f);
+		blue_sphere.scale = glm::vec3(0.3f, 0.3f, 0.3f);
+		blue_sphere.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+		blue_sphere.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		blue_sphere.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		blue_sphere.exponent = 100.0;
+
+		Plane floor;
+		floor.position = glm::vec3(0.0f, -1.0f, 0.0f);
+		floor.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		floor.specular = glm::vec3(0.0f, 0.0f, 0.0f);
+		floor.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		floor.exponent = 0.0;
+
+		Plane wall;
+		wall.position = glm::vec3(0.0f, 0.0f, -3.0f);
+		wall.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+		wall.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		wall.specular = glm::vec3(0.0f, 0.0f, 0.0f);
+		wall.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		wall.exponent = 0.0;
+
+		Sphere ref_sphere1;
+		ref_sphere1.position = glm::vec3(-0.5f, 0.0f, -0.5f);
+		ref_sphere1.reflective = true;
+
+		Sphere ref_sphere2;
+		ref_sphere2.position = glm::vec3(1.5f, 0.0f, -1.5f);
+		ref_sphere2.reflective = true;
+
+		scene->shapes.insert(scene->shapes.end(), { &red_sphere, &blue_sphere, &floor, &wall, &ref_sphere1, &ref_sphere2 });
+		scene->lights.insert(scene->lights.end(), { &l1, &l2 });
+	}
 	
 
 	Camera cam;
@@ -163,7 +221,7 @@ int main(int argc, char **argv)
 			camray r = { cam.eye, v };
 			
 			//cam.rays.push_back(r);
-			glm::vec3 color = 255.0f * compute_ray_color(r, scene, cam);
+			glm::vec3 color = 255.0f * compute_ray_color(r, scene, cam, 0);
 			img->setPixel(i, j, (int)color.r, (int)color.g, (int)color.b);
 		}
 	}
