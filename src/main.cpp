@@ -42,11 +42,21 @@ glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& 
 		glm::vec3 e = glm::normalize(cam.eye - hit->x);
 		for (Light* light : scene->lights) {
 			glm::vec3 l = normalize(light->position - hit->x);
-			
 			glm::vec3 h = glm::normalize(e + l);
+
+			camray light_ray = { hit->x, l };
+			for (int i = 0; i < scene->shapes.size(); i++) {
+				auto h = scene->shapes.at(i)->intersect(light_ray.p, light_ray.v);
+				if (h != nullptr && h->t > 1e-4) {
+					//cout << h->t << endl;
+					return color;
+				}
+			}
+
+			glm::vec3 cd = hit->diffuse * max(0.0f, glm::dot(hit->n, l));
+			glm::vec3 cs = hit->specular * pow(max(0.0f, glm::dot(hit->n, h)), hit->exponent);
 			
-			color += hit->diffuse * max(0.0f, glm::dot(hit->n, l));
-			color += hit->specular * pow(max(0.0f, glm::dot(hit->n, h)), hit->exponent);
+			color += light->intensity * (cd + cs);
 		}
 	}
 
