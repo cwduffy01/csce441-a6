@@ -10,8 +10,8 @@
 #include "Camera.h"
 #include "Scene.h"
 #include "Sphere.h"
+#include "Ellipsoid.h"
 #include "Plane.h"
-#include "tasks.h"
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
@@ -53,7 +53,7 @@ glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& 
 
 				color += light->intensity * (cd + cs);
 			}
-			
+			color = 0.5f * hit->n + glm::vec3(0.5f, 0.5f, 0.5f);
 		}
 	}
 
@@ -114,6 +114,15 @@ int main(int argc, char **argv)
 		sph1.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
 		sph1.exponent = 100.0;
 
+		Ellipsoid ell1;
+		ell1.position = glm::vec3(0.5f, 0.0f, 0.5f);
+		ell1.scale = glm::vec3(0.5f, 0.6f, 0.2f);
+		ell1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+		ell1.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		ell1.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		ell1.exponent = 100.0;
+		ell1.set_E();
+
 		Light l1;
 		l1.position = glm::vec3(1.0f, 2.0f, 2.0f);
 		l1.intensity = 0.5;
@@ -122,9 +131,10 @@ int main(int argc, char **argv)
 		l2.position = glm::vec3(-1.0f, 2.0f, -1.0f);
 		l2.intensity = 0.5;
 
-		scene->shapes.insert(scene->shapes.end(), { &p, &sph1 });
+		scene->shapes.insert(scene->shapes.end(), { &p, &sph1, &ell1 });
 		scene->lights.insert(scene->lights.end(), { &l1, &l2 });
 	}
+	
 
 	Camera cam;
 
