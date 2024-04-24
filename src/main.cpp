@@ -34,16 +34,26 @@ double RANDOM_COLORS[7][3] = {
 	{0.6350,    0.0780,    0.1840},
 };
 
-glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene) {
-	Shape* hit = scene->hit(ray);
+glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& cam) {
+	shared_ptr<Hit> hit = scene->hit(ray);
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	if (hit != nullptr) {
-		color = hit->diffuse;
-		//for (Light* light : scene->lights) {
-		//	glm::vec3 l = 
-		//	
-		//}
+		color = hit->ambient;
+		glm::vec3 e = glm::normalize(cam.eye - hit->x);
+		for (Light* light : scene->lights) {
+			glm::vec3 l = normalize(light->position - hit->x);
+			
+			glm::vec3 h = glm::normalize(e + l);
+			
+			color += hit->diffuse * max(0.0f, glm::dot(hit->n, l));
+			color += hit->specular * pow(max(0.0f, glm::dot(hit->n, h)), hit->exponent);
+		}
 	}
+
+	if (color.r > 1) { color.r = 1.0f; }
+	if (color.g > 1) { color.g = 1.0f; }
+	if (color.b > 1) { color.b = 1.0f; }
+
 	return color;
 }
 
@@ -113,7 +123,7 @@ int main(int argc, char **argv)
 			camray r = { cam.eye, v };
 			
 			//cam.rays.push_back(r);
-			glm::vec3 color = 255.0f * compute_ray_color(r, scene);
+			glm::vec3 color = 255.0f * compute_ray_color(r, scene, cam);
 			img->setPixel(i, j, (int)color.r, (int)color.g, (int)color.b);
 		}
 	}

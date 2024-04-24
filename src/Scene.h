@@ -13,7 +13,7 @@ public:
 	vector<Shape*> shapes;
 	vector<Light*> lights;
 
-	Shape* hit(const camray& ray);
+	shared_ptr<Hit> hit(const camray& ray);
 };
 
 #endif

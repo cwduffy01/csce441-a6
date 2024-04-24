@@ -20,7 +20,7 @@ public:
 
 	Shape();
 
-	virtual Hit* intersect(const glm::vec3& p, const glm::vec3& v) = 0;
+	virtual shared_ptr<Hit> intersect(const glm::vec3& p, const glm::vec3& v) = 0;
 };
 
 #endif

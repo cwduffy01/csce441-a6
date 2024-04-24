@@ -5,7 +5,7 @@
 
 class Sphere : public Shape {
 public:
-	Hit* intersect(const glm::vec3& p, const glm::vec3& v);
+	shared_ptr<Hit> Sphere::intersect(const glm::vec3& p, const glm::vec3& v);
 };
 
 #endif

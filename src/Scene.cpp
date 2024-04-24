@@ -1,16 +1,17 @@
 #include "Scene.h"
 
-Shape* Scene::hit(const camray& ray) {
+shared_ptr<Hit> Scene::hit(const camray& ray) {
 	float min_t = 100000000.0;
 	//int min_ind = -1;
 
-	Shape* rtn = nullptr;
+	shared_ptr<Hit> rtn = nullptr;
 
 	for (int i = 0; i < shapes.size(); i++) {
-		Hit* h = shapes.at(i)->intersect(ray.p, ray.v);
+		auto h = shapes.at(i)->intersect(ray.p, ray.v);
 		if (h != nullptr && h->t < min_t) {
 			min_t = h->t;
-			rtn = shapes.at(i);
+			rtn = h;
+			/*struct camray ref { h-> };*/
 		}
 	}
 
