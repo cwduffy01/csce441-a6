@@ -10,6 +10,8 @@
 #include "Camera.h"
 #include "Scene.h"
 #include "Sphere.h"
+#include "Plane.h"
+#include "tasks.h"
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
@@ -24,16 +26,6 @@
 // You should never do this in a header file.
 using namespace std;
 
-double RANDOM_COLORS[7][3] = {
-	{0.0000,    0.4470,    0.7410},
-	{0.8500,    0.3250,    0.0980},
-	{0.9290,    0.6940,    0.1250},
-	{0.4940,    0.1840,    0.5560},
-	{0.4660,    0.6740,    0.1880},
-	{0.3010,    0.7450,    0.9330},
-	{0.6350,    0.0780,    0.1840},
-};
-
 glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& cam) {
 	shared_ptr<Hit> hit = scene->hit(ray);
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -45,18 +37,23 @@ glm::vec3 compute_ray_color(const camray& ray, shared_ptr<Scene> scene, Camera& 
 			glm::vec3 h = glm::normalize(e + l);
 
 			camray light_ray = { hit->x, l };
+			bool pass = false;
 			for (int i = 0; i < scene->shapes.size(); i++) {
 				auto h = scene->shapes.at(i)->intersect(light_ray.p, light_ray.v);
 				if (h != nullptr && h->t > 1e-4) {
-					//cout << h->t << endl;
-					return color;
+					//return color;
+					pass = true;
+					break;
 				}
 			}
 
-			glm::vec3 cd = hit->diffuse * max(0.0f, glm::dot(hit->n, l));
-			glm::vec3 cs = hit->specular * pow(max(0.0f, glm::dot(hit->n, h)), hit->exponent);
+			if (!pass) {
+				glm::vec3 cd = hit->diffuse * max(0.0f, glm::dot(hit->n, l));
+				glm::vec3 cs = hit->specular * pow(max(0.0f, glm::dot(hit->n, h)), hit->exponent);
+
+				color += light->intensity * (cd + cs);
+			}
 			
-			color += light->intensity * (cd + cs);
 		}
 	}
 
@@ -74,38 +71,61 @@ int main(int argc, char **argv)
 
 	auto scene = make_shared<Scene>();
 
-	Sphere sph1;
-	sph1.position = glm::vec3(-0.5f, -1.0f, 1.0f);
-	sph1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
-	sph1.specular = glm::vec3(1.0f, 1.0f, 0.5f);
-	sph1.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-	sph1.exponent = 100.0;
+	if (scene_num == 1 || scene_num == 2) {
+		Sphere sph1;
+		sph1.position = glm::vec3(-0.5f, -1.0f, 1.0f);
+		sph1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+		sph1.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		sph1.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		sph1.exponent = 100.0;
 
-	Sphere sph2;
-	sph2.position = glm::vec3(0.5f, -1.0f, -1.0f);
-	sph2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
-	sph2.specular = glm::vec3(1.0f, 1.0f, 0.5f);
-	sph2.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-	sph2.exponent = 100.0;
+		Sphere sph2;
+		sph2.position = glm::vec3(0.5f, -1.0f, -1.0f);
+		sph2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+		sph2.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		sph2.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		sph2.exponent = 100.0;
 
-	Sphere sph3;
-	sph3.position = glm::vec3(0.0f, 1.0f, 0.0f);
-	sph3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
-	sph3.specular = glm::vec3(1.0f, 1.0f, 0.5f);
-	sph3.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-	sph3.exponent = 100.0;
+		Sphere sph3;
+		sph3.position = glm::vec3(0.0f, 1.0f, 0.0f);
+		sph3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+		sph3.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		sph3.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		sph3.exponent = 100.0;
 
-	Light l1;
-	l1.position = glm::vec3(-2.0f, 1.0f, 1.0f);
+		Light l1;
+		l1.position = glm::vec3(-2.0f, 1.0f, 1.0f);
 
-	scene->shapes.insert(scene->shapes.end(), { &sph1, &sph2, &sph3 });
-	scene->lights.push_back(&l1);
+		scene->shapes.insert(scene->shapes.end(), { &sph1, &sph2, &sph3 });
+		scene->lights.push_back(&l1);
+	}
+	else if (scene_num == 3) {
+		Plane p;
+		p.position = glm::vec3(0.0f, -1.0f, 0.0f);
+		p.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		p.specular = glm::vec3(0.0f, 0.0f, 0.0f);
+		p.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		p.exponent = 0.0;
 
+		Sphere sph1;
+		sph1.position = glm::vec3(-0.5f, 0.0f, -0.5f);
+		sph1.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+		sph1.specular = glm::vec3(1.0f, 1.0f, 0.5f);
+		sph1.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+		sph1.exponent = 100.0;
 
+		Light l1;
+		l1.position = glm::vec3(1.0f, 2.0f, 2.0f);
+		l1.intensity = 0.5;
 
+		Light l2;
+		l2.position = glm::vec3(-1.0f, 2.0f, -1.0f);
+		l2.intensity = 0.5;
 
+		scene->shapes.insert(scene->shapes.end(), { &p, &sph1 });
+		scene->lights.insert(scene->lights.end(), { &l1, &l2 });
+	}
 
-	
 	Camera cam;
 
 	cam.eye = glm::vec3(0.0f, 0.0f, 5.0f);
@@ -137,12 +157,6 @@ int main(int argc, char **argv)
 			img->setPixel(i, j, (int)color.r, (int)color.g, (int)color.b);
 		}
 	}
-
-	//camray r = { glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f) };
-
-	//sph.intersect(r.p, r.v);
-
-	img->setPixel(0, 0, 255, 255, 255);
 
 	img->writeToFile(filename);
 	

@@ -19,6 +19,7 @@ public:
 	bool reflective = false;
 
 	Shape();
+	Shape(glm::vec3 position, glm::vec3 scale, glm::vec3 rotation, glm::vec3 diffuse, glm::vec3 ambient, glm::vec3 specular, float exponent, bool reflective);
 
 	virtual shared_ptr<Hit> intersect(const glm::vec3& p, const glm::vec3& v) = 0;
 };

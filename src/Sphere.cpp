@@ -1,7 +1,5 @@
 #include "Sphere.h"
 
-#include <iostream>
-
 shared_ptr<Hit> Sphere::intersect(const glm::vec3& p, const glm::vec3& v) {
 	glm::vec3 pc = p - position;
 	float a = glm::dot(v, v);
